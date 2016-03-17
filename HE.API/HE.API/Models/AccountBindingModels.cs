@@ -36,7 +36,7 @@ namespace HE.API.Models
         [Required]
         [EmailAddress]
         [Display(Name = "Email Address")]
-        public string EmailAddress { get; set; }
+        public string Email { get; set; }
 
         [Required]
         [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
@@ -55,6 +55,12 @@ namespace HE.API.Models
         [Required]
         [Display(Name = "Email Address")]
         public string Email { get; set; }
+        
+        [Required]
+        public string Provider { get; set; }
+
+        [Required]
+        public string ExternalAccessToken { get; set; }
     }
 
     public class RemoveLoginBindingModel

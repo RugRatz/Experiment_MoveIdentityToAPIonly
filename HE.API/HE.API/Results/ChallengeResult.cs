@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using Microsoft.Owin.Security;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,21 +9,42 @@ namespace HE.API.Results
 {
     public class ChallengeResult : IHttpActionResult
     {
-        public ChallengeResult(string loginProvider, ApiController controller)
+        private const string XsrfKey = "XsrfId";
+
+        public ChallengeResult(string provider, string redirectUri, HttpRequestMessage request)
+          : this(provider, redirectUri, null, request)
         {
-            LoginProvider = loginProvider;
-            Request = controller.Request;
         }
 
-        public string LoginProvider { get; set; }
-        public HttpRequestMessage Request { get; set; }
+        public ChallengeResult(string provider, string redirectUri, string userId, HttpRequestMessage request)
+        {
+            LoginProvider = provider;
+            RedirectUri = redirectUri;
+            UserId = userId;
+            Request = request;
+        }
+
+        public string LoginProvider { get; private set; }
+
+        public string RedirectUri { get; private set; }
+
+        public string UserId { get; private set; }
+
+        public HttpRequestMessage Request { get; private set; }
 
         public Task<HttpResponseMessage> ExecuteAsync(CancellationToken cancellationToken)
         {
-            Request.GetOwinContext().Authentication.Challenge(LoginProvider);
+            var properties = new AuthenticationProperties() { RedirectUri = this.RedirectUri };
+            if (UserId != null)
+            {
+                properties.Dictionary[XsrfKey] = UserId;
+            }
+
+            Request.GetOwinContext().Authentication.Challenge(properties, LoginProvider);
 
             HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.Unauthorized);
             response.RequestMessage = Request;
+
             return Task.FromResult(response);
         }
     }

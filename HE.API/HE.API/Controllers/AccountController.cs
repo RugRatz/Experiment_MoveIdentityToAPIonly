@@ -15,6 +15,8 @@ using Microsoft.Owin.Security.OAuth;
 using HE.API.Models;
 using HE.API.Providers;
 using HE.API.Results;
+using System.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace HE.API.Controllers
 {
@@ -48,18 +50,6 @@ namespace HE.API.Controllers
                 _userManager = value;
             }
         }
-
-        //public ApplicationSignInManager SignInManager
-        //{
-        //    get
-        //    {
-        //        return _signInManager ?? Request.GetOwinContext().Get<ApplicationSignInManager>();
-        //    }
-        //    private set
-        //    {
-        //        _signInManager = value;
-        //    }
-        //}
 
         public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
 
@@ -138,7 +128,7 @@ namespace HE.API.Controllers
 
             IdentityResult result = await UserManager.ChangePasswordAsync(User.Identity.GetUserId(), model.OldPassword,
                 model.NewPassword);
-            
+
             if (!result.Succeeded)
             {
                 return GetErrorResult(result);
@@ -233,13 +223,21 @@ namespace HE.API.Controllers
             return Ok();
         }
 
-        // GET api/Account/ExternalLogin
+        /// <summary>
+        /// GET api/Account/ExternalLogin
+        /// Synonymous to the MVC project > AccountController > ExternalLogin method
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <param name="error"></param>
+        /// <returns></returns>
         [OverrideAuthentication]    // override global setting and only accept an application cookie
         [HostAuthentication(DefaultAuthenticationTypes.ExternalCookie)]
         [AllowAnonymous]
         [Route("ExternalLogin", Name = "ExternalLogin")]
         public async Task<IHttpActionResult> GetExternalLogin(string provider, string error = null)
         {
+            string redirectUri = string.Empty;
+
             if (error != null)
             {
                 return Redirect(Url.Content("~/") + "#error=" + Uri.EscapeDataString(error));
@@ -247,9 +245,17 @@ namespace HE.API.Controllers
 
             if (!User.Identity.IsAuthenticated)
             {
-                return new ChallengeResult(provider, this);
+                return new ChallengeResult(provider, "api/Account/ExternalLogin", this.Request);
+                //return new ChallengeResult(provider, this);
             }
+            
+            var redirectUriValidationResult = ValidateClientAndRedirectUri(this.Request, ref redirectUri);
 
+            if (!string.IsNullOrWhiteSpace(redirectUriValidationResult))
+            {
+                return BadRequest(redirectUriValidationResult);
+            }
+            
             ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
 
             if (externalLogin == null)
@@ -260,7 +266,8 @@ namespace HE.API.Controllers
             if (externalLogin.LoginProvider != provider)
             {
                 Authentication.SignOut(DefaultAuthenticationTypes.ExternalCookie);
-                return new ChallengeResult(provider, this);
+                return new ChallengeResult(provider, "api/Account/ExternalLogin", this.Request);
+                //return new ChallengeResult(provider, this);
             }
 
             CustomerProfile user = await UserManager.FindAsync(new UserLoginInfo(externalLogin.LoginProvider,
@@ -268,12 +275,21 @@ namespace HE.API.Controllers
 
             bool hasRegistered = user != null;
 
+            //redirectUri = string.Format("{0}#external_access_token={1}&provider={2}&haslocalaccount={3}&external_user_name={4}",
+            //                                redirectUri,
+            //                                externalLogin.ExternalAccessToken,
+            //                                externalLogin.LoginProvider,
+            //                                hasRegistered.ToString(),
+            //                                externalLogin.UserName);
+
+            //return Redirect(redirectUri);
+
             if (hasRegistered)
             {
                 Authentication.SignOut(DefaultAuthenticationTypes.ExternalCookie);
-                
-                 ClaimsIdentity oAuthIdentity = await user.GenerateUserIdentityAsync(UserManager,
-                    OAuthDefaults.AuthenticationType);
+
+                ClaimsIdentity oAuthIdentity = await user.GenerateUserIdentityAsync(UserManager,
+                   OAuthDefaults.AuthenticationType);
                 ClaimsIdentity cookieIdentity = await user.GenerateUserIdentityAsync(UserManager,
                     CookieAuthenticationDefaults.AuthenticationType);
 
@@ -341,7 +357,7 @@ namespace HE.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var user = new CustomerProfile() { UserName = model.EmailAddress, Email = model.EmailAddress };
+            var user = new CustomerProfile() { UserName = model.Email, Email = model.Email };
 
             IdentityResult result = await UserManager.CreateAsync(user, model.Password);
 
@@ -382,7 +398,7 @@ namespace HE.API.Controllers
             result = await UserManager.AddLoginAsync(user.Id, info.Login);
             if (!result.Succeeded)
             {
-                return GetErrorResult(result); 
+                return GetErrorResult(result);
             }
             return Ok();
         }
@@ -439,6 +455,7 @@ namespace HE.API.Controllers
             public string LoginProvider { get; set; }
             public string ProviderKey { get; set; }
             public string UserName { get; set; }
+            public string ExternalAccessToken { get; set; }
 
             public IList<Claim> GetClaims()
             {
@@ -477,7 +494,8 @@ namespace HE.API.Controllers
                 {
                     LoginProvider = providerKeyClaim.Issuer,
                     ProviderKey = providerKeyClaim.Value,
-                    UserName = identity.FindFirstValue(ClaimTypes.Name)
+                    UserName = identity.FindFirstValue(ClaimTypes.Name),
+                    ExternalAccessToken = identity.FindFirstValue("ExternalAccessToken"),
                 };
             }
         }
@@ -501,6 +519,123 @@ namespace HE.API.Controllers
                 _random.GetBytes(data);
                 return HttpServerUtility.UrlTokenEncode(data);
             }
+        }
+
+        private string ValidateClientAndRedirectUri(HttpRequestMessage request, ref string redirectUriOutput)
+        {
+
+            Uri redirectUri;
+
+            var redirectUriString = GetQueryString(Request, "redirect_uri");
+
+            if (string.IsNullOrWhiteSpace(redirectUriString))
+            {
+                return "redirect_uri is required";
+            }
+
+            bool validUri = Uri.TryCreate(redirectUriString, UriKind.Absolute, out redirectUri);
+
+            if (!validUri)
+            {
+                return "redirect_uri is invalid";
+            }
+
+            var clientId = GetQueryString(Request, "client_id");
+
+            if (string.IsNullOrWhiteSpace(clientId))
+            {
+                return "client_Id is required";
+            }
+
+            //var client = _repo.FindClient(clientId);
+
+            //if (client == null)
+            //{
+            //    return string.Format("Client_id '{0}' is not registered in the system.", clientId);
+            //}
+
+            //if (!string.Equals(client.AllowedOrigin, redirectUri.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase))
+            //{
+            //    return string.Format("The given URL is not allowed by Client_id '{0}' configuration.", clientId);
+            //}
+
+            redirectUriOutput = redirectUri.AbsoluteUri;
+
+            return string.Empty;
+
+        }
+
+        private string GetQueryString(HttpRequestMessage request, string key)
+        {
+            var queryStrings = request.GetQueryNameValuePairs();
+
+            if (queryStrings == null) return null;
+
+            var match = queryStrings.FirstOrDefault(keyValue => string.Compare(keyValue.Key, key, true) == 0);
+
+            if (string.IsNullOrEmpty(match.Value)) return null;
+
+            return match.Value;
+        }
+
+        private async Task<ParsedExternalAccessToken> VerifyExternalAccessToken(string provider, string accessToken)
+        {
+            ParsedExternalAccessToken parsedToken = null;
+
+            var verifyTokenEndPoint = "";
+
+            if (provider == "Facebook")
+            {
+                //You can get it from here: https://developers.facebook.com/tools/accesstoken/
+                //More about debug_tokn here: http://stackoverflow.com/questions/16641083/how-does-one-get-the-app-access-token-for-debug-token-inspection-on-facebook
+                //https://graph.facebook.com/endpoint?key=value&amp;access_token=app_id|app_secret
+                var appToken = "xxxxx";
+                verifyTokenEndPoint = string.Format("https://graph.facebook.com/debug_token?input_token={0}&access_token={1}", accessToken, appToken);
+            }
+            else if (provider == "Google")
+            {
+                verifyTokenEndPoint = string.Format("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={0}", accessToken);
+            }
+            else
+            {
+                return null;
+            }
+
+            var client = new HttpClient();
+            var uri = new Uri(verifyTokenEndPoint);
+            var response = await client.GetAsync(uri);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+
+                dynamic jObj = (JObject)Newtonsoft.Json.JsonConvert.DeserializeObject(content);
+
+                parsedToken = new ParsedExternalAccessToken();
+
+                if (provider == "Facebook")
+                {
+                    parsedToken.user_id = jObj["data"]["user_id"];
+                    parsedToken.app_id = jObj["data"]["app_id"];
+
+                    if (!string.Equals(Startup.facebookAuthOptions.AppId, parsedToken.app_id, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return null;
+                    }
+                }
+                else if (provider == "Google")
+                {
+                    parsedToken.user_id = jObj["user_id"];
+                    parsedToken.app_id = jObj["audience"];
+
+                    if (!string.Equals(Startup.googleAuthOptions.ClientId, parsedToken.app_id, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return null;
+                    }
+                }
+            }
+
+            return parsedToken;
         }
 
         #endregion

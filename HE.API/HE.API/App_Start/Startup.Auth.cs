@@ -7,12 +7,16 @@ using Owin;
 using HE.API.Providers;
 using HE.API.DbContexts;
 using Microsoft.Owin.Security.Google;
+using Microsoft.Owin.Security.Facebook;
 
 namespace HE.API
 {
     public partial class Startup
     {
         public static OAuthAuthorizationServerOptions OAuthOptions { get; private set; }
+        public static OAuthBearerAuthenticationOptions OAuthBearerOptions { get; set; }
+        public static GoogleOAuth2AuthenticationOptions googleAuthOptions { get; set; }
+        public static FacebookAuthenticationOptions facebookAuthOptions { get; set; }
 
         public static string PublicClientId { get; private set; }
 
@@ -33,6 +37,8 @@ namespace HE.API
             // and registers itself as ExternalCookie or  DefaultAuthenticationTypes.ExternalCookie
             app.UseExternalSignInCookie(DefaultAuthenticationTypes.ExternalCookie);
             #endregion
+
+            OAuthBearerOptions = new OAuthBearerAuthenticationOptions();
 
             // Configure the application for OAuth based flow
             PublicClientId = "self";
@@ -64,15 +70,26 @@ namespace HE.API
             //    consumerKey: "",
             //    consumerSecret: "");
 
-            app.UseFacebookAuthentication(
-               appId: "1676987429221183",
-               appSecret: "833a4ccda4872c8d8ebf45b14297e0a1");
-
-            app.UseGoogleAuthentication(new GoogleOAuth2AuthenticationOptions()
+            // http://bitoftech.net/2014/08/11/asp-net-web-api-2-external-logins-social-logins-facebook-google-angularjs-app/
+            //Configure Google External Login
+            googleAuthOptions = new GoogleOAuth2AuthenticationOptions()
             {
                 ClientId = "51581202790-7hj5vr2f1e4ns25cr6i4jvmn4e4jqg8i.apps.googleusercontent.com",
-                ClientSecret = "ebbcxN32FkS0Fk3zI8CBmkFo"
-            });
+                ClientSecret = "ebbcxN32FkS0Fk3zI8CBmkFo",
+                Provider = new GoogleAuthProvider()
+            };
+
+            app.UseGoogleAuthentication(googleAuthOptions);
+
+            //Configure Facebook External Login
+            facebookAuthOptions = new FacebookAuthenticationOptions()
+            {
+                AppId = "1676987429221183",
+                AppSecret = "833a4ccda4872c8d8ebf45b14297e0a1",
+                Provider = new FacebookAuthProvider()
+            };
+
+            app.UseFacebookAuthentication(facebookAuthOptions);
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Ajax.Utilities;
 using Newtonsoft.Json;
 using System;
+using HE.WebApp.UserInterface.Models;
 
 namespace HE.WebApp.UserInterface
 {
@@ -64,7 +65,7 @@ namespace HE.WebApp.UserInterface
                     return JsonConvert.DeserializeObject<T>(json);
                 }
 
-                throw new Exception(result.StatusCode + " " + JsonConvert.DeserializeObject<T>(json));
+                return JsonConvert.DeserializeObject<T>(json);
             }
         }
 
@@ -111,7 +112,32 @@ namespace HE.WebApp.UserInterface
             }
         }
 
-        private string BuildActionUri(string action)
+        /// <summary>
+        /// Make an async call to api/Account/ExternalLogins?returnUrl=%2F&generateState=true
+        /// This method will return a list of external logins that are available
+        /// If there are no external logins available, NULL will be returned
+        /// </summary>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        public async Task<List<ExternalLoginViewModel>> GetExternalLoginsAvailableAsync(string action)
+        {
+            using (var client = new HttpClient())
+            {
+                HttpResponseMessage response = await client.GetAsync(BuildActionUri(action));
+
+                string json = await response.Content.ReadAsStringAsync();
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    List<ExternalLoginViewModel> externalLogins = await response.Content.ReadAsAsync<List<ExternalLoginViewModel>>();
+                    return externalLogins;
+                }
+
+                return null;
+            }
+        }
+
+        public string BuildActionUri(string action)
         {
             return BaseUri + action;
         }

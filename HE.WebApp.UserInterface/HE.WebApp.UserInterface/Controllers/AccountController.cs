@@ -9,6 +9,7 @@ using Microsoft.Owin.Security;
 using HE.WebApp.UserInterface.Models;
 using HE.API.Models;
 using System.Collections.Generic;
+using System.Net.Http;
 
 namespace HE.WebApp.UserInterface.Controllers
 {
@@ -76,11 +77,11 @@ namespace HE.WebApp.UserInterface.Controllers
             
             //Manually add a claim for the user's identity
             var claims = new List<Claim>();
-            claims.Add(new Claim(ClaimTypes.Name, model.EmailAddress));
-            claims.Add(new Claim(ClaimTypes.Email, model.EmailAddress));
+            claims.Add(new Claim(ClaimTypes.Name, model.Email));
+            claims.Add(new Claim(ClaimTypes.Email, model.Email));
             var userIdentity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
             
-            var isSignInSuccessful = await AttemptSignIn(userIdentity, model.EmailAddress, model.Password);
+            var isSignInSuccessful = await AttemptSignIn(userIdentity, model.Email, model.Password);
 
             // Redirect is needed to set the User object. User object is only set on the subsequent request.
             if (isSignInSuccessful)
@@ -236,11 +237,11 @@ namespace HE.WebApp.UserInterface.Controllers
 
                 //manually add a claim for the user's identity
                 var claims = new List<Claim>();
-                claims.Add(new Claim(ClaimTypes.Name, model.EmailAddress));
-                claims.Add(new Claim(ClaimTypes.Email, model.EmailAddress));
+                claims.Add(new Claim(ClaimTypes.Name, model.Email));
+                claims.Add(new Claim(ClaimTypes.Email, model.Email));
                 var userIdentity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
 
-                var isSignInSuccessful = await AttemptSignIn(userIdentity, model.EmailAddress, model.Password);
+                var isSignInSuccessful = await AttemptSignIn(userIdentity, model.Email, model.Password);
 
                 // Redirect is needed to set the User object. User object is only set on the subsequent request.
                 if (isSignInSuccessful)
@@ -398,15 +399,52 @@ namespace HE.WebApp.UserInterface.Controllers
         }
 
         //
-        // POST: /Account/ExternalLogin
-        [HttpPost]
-        [AllowAnonymous]
+        // WAS POST: /Account/ExternalLogin
+        // NOW GET /Account/ExternalLogin
+        //[HttpPost]
+        [AllowAnonymous]    //System.Web.Mvc
         [ValidateAntiForgeryToken]
-        public ActionResult ExternalLogin(string provider, string returnUrl)
+        public async Task<ActionResult> ExternalLogin(string provider, string returnUrl)
         {
-            // Request a redirect to the external login provider
-            return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+            var externalLoginsURI = "api/Account/ExternalLogins?returnUrl=%2F&generateState=true";
+            List<Models.ExternalLoginViewModel> externalLoginsAvailable = await WebApiService.Instance.GetExternalLoginsAvailableAsync(externalLoginsURI);
+
+            // Check if the external provider exists.  If so, call API to get the external login
+            var providerToUse = externalLoginsAvailable.Find(ela => ela.Name == provider);
+            if (providerToUse != null )
+            {
+                using (var client = new HttpClient())
+                {
+                    // Send a GET request to the external provider's URL
+                    var result = await client.GetAsync(WebApiService.Instance.BuildActionUri(providerToUse.Url));
+                    
+                    string json = await result.Content.ReadAsStringAsync();
+                    if (result.IsSuccessStatusCode)
+                    {
+                        // As long as the GET request to the external provider's URL was successful, I now need to hookup a CALLBACK
+                        // I'm using the same callback provided by MVC project
+                        // Request a redirect to the external login provider
+                        //return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+                        var test = result.ToString();
+                        return RedirectToAction("Signin", "Account");
+                    }
+                }
+            }
+            return RedirectToAction("Signin", "Account");
         }
+
+        #region ORIGINAL ExternalLogin
+        //
+        // POST: /Account/ExternalLogin
+        //[HttpPost]
+        //[AllowAnonymous]
+        //[ValidateAntiForgeryToken]
+        //public ActionResult ExternalLogin(string provider, string returnUrl)
+        //{
+        //    // Request a redirect to the external login provider
+        //    return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+        //}
+        #endregion
 
         //
         // GET: /Account/SendCode
@@ -451,10 +489,11 @@ namespace HE.WebApp.UserInterface.Controllers
             var loginInfo = await AuthenticationManager.GetExternalLoginInfoAsync();
             if (loginInfo == null)
             {
-                return RedirectToAction("Sigin");
+                return RedirectToAction("Signin");
             }
-
-            // Sign in the user with this external login provider if the user already has a login
+            
+            // Make a call to API to this work instead of doing this from the User Interface side
+            //// Sign in the user with this external login provider if the user already has a login
             var result = await SignInManager.ExternalSignInAsync(loginInfo, isPersistent: false);
             switch (result)
             {
@@ -471,6 +510,23 @@ namespace HE.WebApp.UserInterface.Controllers
                     ViewBag.LoginProvider = loginInfo.Login.LoginProvider;
                     return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel { Email = loginInfo.Email });
             }
+
+            // To allow the API to do the work, need to make GET call
+            //using (var client = new HttpClient())
+            //{
+
+            //    //api/Account/ExternalLogins?returnUrl=%2F&generateState=true
+            //    var externalLoginURI = "api/Account/ExternalLogin?provider=%2F" + loginInfo.Login.LoginProvider;
+            //    // Send a GET request to the external provider's URL
+            //    var result = await client.GetAsync(WebApiService.Instance.BuildActionUri(externalLoginURI));
+
+            //    string json = await result.Content.ReadAsStringAsync();
+            //    if (result.IsSuccessStatusCode)
+            //    {
+            //        return RedirectToLocal(returnUrl);
+            //    }
+            //}
+            //return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel { Email = loginInfo.Email });
         }
 
         //
