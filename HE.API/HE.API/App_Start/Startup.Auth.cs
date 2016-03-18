@@ -24,10 +24,20 @@ namespace HE.API
             app.CreatePerOwinContext<ApplicationUserManager>(ApplicationUserManager.Create);
             //app.CreatePerOwinContext<ApplicationSignInManager>(ApplicationSignInManager.Create);
 
+            app.Use(async (Context, next) =>
+            {
+                await next.Invoke();
+            });
+
             # region Enable the application to use a cookie to store information for the signed in user and to use a cookie to temporarily store information about a user logging in with a third party login provider
             // adds supports for CLASSIC COOKIE BASED AUTHENTICATION
             // The authentication type is simply called Cookies or in code the middleware is referenced using CookieAuthenticationDefaults.AuthenticationType
             app.UseCookieAuthentication(new CookieAuthenticationOptions());
+
+            app.Use(async (Context, next) =>
+            {
+                await next.Invoke();
+            });
 
             // This cookie is used to temporarily store information about a user logging in with a THIRD PARTY LOGIN PROVIDER
             // and registers itself as ExternalCookie or  DefaultAuthenticationTypes.ExternalCookie
@@ -64,14 +74,29 @@ namespace HE.API
             //    consumerKey: "",
             //    consumerSecret: "");
 
+            app.Use(async (Context, next) =>
+            {
+                await next.Invoke();
+            });
+
             app.UseFacebookAuthentication(
                appId: "1676987429221183",
                appSecret: "833a4ccda4872c8d8ebf45b14297e0a1");
+
+            app.Use(async (Context, next) =>
+            {
+                await next.Invoke();
+            });
 
             app.UseGoogleAuthentication(new GoogleOAuth2AuthenticationOptions()
             {
                 ClientId = "51581202790-7hj5vr2f1e4ns25cr6i4jvmn4e4jqg8i.apps.googleusercontent.com",
                 ClientSecret = "ebbcxN32FkS0Fk3zI8CBmkFo"
+            });
+
+            app.Use(async (Context, next) =>
+            {
+                await next.Invoke();
             });
         }
     }

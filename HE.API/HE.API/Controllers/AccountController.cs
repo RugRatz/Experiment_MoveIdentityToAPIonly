@@ -48,19 +48,7 @@ namespace HE.API.Controllers
                 _userManager = value;
             }
         }
-
-        //public ApplicationSignInManager SignInManager
-        //{
-        //    get
-        //    {
-        //        return _signInManager ?? Request.GetOwinContext().Get<ApplicationSignInManager>();
-        //    }
-        //    private set
-        //    {
-        //        _signInManager = value;
-        //    }
-        //}
-
+        
         public ISecureDataFormat<AuthenticationTicket> AccessTokenFormat { get; private set; }
 
         // GET api/Account/UserInfo
@@ -234,6 +222,7 @@ namespace HE.API.Controllers
         }
 
         // GET api/Account/ExternalLogin
+        [HttpGet]
         [OverrideAuthentication]    // override global setting and only accept an application cookie
         [HostAuthentication(DefaultAuthenticationTypes.ExternalCookie)]
         [AllowAnonymous]
@@ -247,7 +236,8 @@ namespace HE.API.Controllers
 
             if (!User.Identity.IsAuthenticated)
             {
-                return new ChallengeResult(provider, this);
+                //return new ChallengeResult(provider, this);
+                return new ChallengeResult(provider, "/api/home", this);
             }
 
             ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
@@ -260,7 +250,8 @@ namespace HE.API.Controllers
             if (externalLogin.LoginProvider != provider)
             {
                 Authentication.SignOut(DefaultAuthenticationTypes.ExternalCookie);
-                return new ChallengeResult(provider, this);
+                //return new ChallengeResult(provider, this);
+                return new ChallengeResult(provider, "/api/home",this);
             }
 
             CustomerProfile user = await UserManager.FindAsync(new UserLoginInfo(externalLogin.LoginProvider,

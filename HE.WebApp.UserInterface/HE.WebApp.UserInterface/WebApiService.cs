@@ -111,7 +111,7 @@ namespace HE.WebApp.UserInterface
             }
         }
 
-        private string BuildActionUri(string action)
+        public string BuildActionUri(string action)
         {
             return BaseUri + action;
         }

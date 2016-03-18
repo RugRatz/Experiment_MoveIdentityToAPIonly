@@ -218,6 +218,7 @@
     <Compile Include="Controllers\GroceriesController.cs" />
     <Compile Include="Controllers\GroceryGroupIngredientsController.cs" />
     <Compile Include="Controllers\GroceryGroupsController.cs" />
+    <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\HomemadeItemsController.cs" />
     <Compile Include="Controllers\IngredientCategoriesController.cs" />
     <Compile Include="Controllers\IngredientNotesController.cs" />
@@ -362,7 +363,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>64431</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:64431/</IISUrl>
+          <IISUrl>https://localhost:44301/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

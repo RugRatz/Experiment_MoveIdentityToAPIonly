@@ -9,6 +9,7 @@ using Microsoft.Owin.Security;
 using HE.WebApp.UserInterface.Models;
 using HE.API.Models;
 using System.Collections.Generic;
+using System.Net.Http;
 
 namespace HE.WebApp.UserInterface.Controllers
 {
@@ -396,17 +397,51 @@ namespace HE.WebApp.UserInterface.Controllers
         {
             return View();
         }
-
+        
         //
         // POST: /Account/ExternalLogin
-        [HttpPost]
-        [AllowAnonymous]
+        //[HttpPost]
+        [AllowAnonymous] //Mvc
         [ValidateAntiForgeryToken]
-        public ActionResult ExternalLogin(string provider, string returnUrl)
+        public async Task<ActionResult> ExternalLogin(string provider, string returnUrl)
         {
-            // Request a redirect to the external login provider
-            return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+            var getExternalProvidersURI = "api/Account/ExternalLogins?returnUrl=%2F&generateState=true";
+            var externalProvidersAvailable = await WebApiService.Instance.GetAsync<List<ExternalLoginViewModel>>(getExternalProvidersURI);
+
+            var providerUserWants = externalProvidersAvailable.Find(prov => prov.Name == provider);
+
+            if(providerUserWants != null)
+            {
+                // As long as the desired external provider is available through the API, we can try a GET request
+                //HttpResponseMessage response = await WebApiService.Instance.GetAsync<HttpResponseMessage>(providerUserWants.Url);
+
+                using (var client = new HttpClient())
+                {
+                    HttpResponseMessage response = await client.GetAsync(WebApiService.Instance.BuildActionUri(providerUserWants.Url));
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var answer = response.Headers.ToString();
+
+                        // Request a redirect to the external login provider
+                        return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+                    }
+                }
+            }
+            return RedirectToAction("Sigin");
         }
+
+        #region ORIGINAL ExternalLogin
+        //// POST: /Account/ExternalLogin
+        //[HttpPost]
+        //[AllowAnonymous]
+        //[ValidateAntiForgeryToken]
+        //public ActionResult ExternalLogin(string provider, string returnUrl)
+        //{
+        //    // Request a redirect to the external login provider
+        //    return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+        //}
+        #endregion
 
         //
         // GET: /Account/SendCode
