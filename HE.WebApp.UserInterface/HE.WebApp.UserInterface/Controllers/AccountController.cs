@@ -403,7 +403,7 @@ namespace HE.WebApp.UserInterface.Controllers
         //[HttpPost]
         [AllowAnonymous] //Mvc
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> ExternalLogin(string provider, string returnUrl)
+        public async Task ExternalLogin(string provider, string returnUrl)
         {
             var getExternalProvidersURI = "api/Account/ExternalLogins?returnUrl=%2F&generateState=true";
             var externalProvidersAvailable = await WebApiService.Instance.GetAsync<List<ExternalLoginViewModel>>(getExternalProvidersURI);
@@ -424,11 +424,11 @@ namespace HE.WebApp.UserInterface.Controllers
                         var answer = response.Headers.ToString();
 
                         // Request a redirect to the external login provider
-                        return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+                        //return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
                     }
                 }
             }
-            return RedirectToAction("Sigin");
+            //return RedirectToAction("Sigin");
         }
 
         #region ORIGINAL ExternalLogin
