@@ -54,10 +54,20 @@ namespace HE.WebApp.UserInterface
             //app.UseTwitterAuthentication(
             //   consumerKey: "",
             //   consumerSecret: "");
+            
+            app.Use(async (Context, next) =>
+            {
+                await next.Invoke();
+            });
 
             app.UseFacebookAuthentication(
                appId: "1676987429221183",
                appSecret: "833a4ccda4872c8d8ebf45b14297e0a1");
+            
+            app.Use(async (Context, next) =>
+            {
+                await next.Invoke();
+            });
 
             app.UseGoogleAuthentication(new GoogleOAuth2AuthenticationOptions()
             {
