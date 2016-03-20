@@ -403,7 +403,7 @@ namespace HE.WebApp.UserInterface.Controllers
         //[HttpPost]
         [AllowAnonymous] //Mvc
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> ExternalLogin(string provider, string returnUrl)
+        public async Task ExternalLogin(string provider, string returnUrl)
         {
             var getExternalProvidersURI = "api/Account/ExternalLogins?returnUrl=%2F&generateState=true";
             var externalProvidersAvailable = await WebApiService.Instance.GetAsync<List<ExternalLoginViewModel>>(getExternalProvidersURI);
@@ -417,18 +417,26 @@ namespace HE.WebApp.UserInterface.Controllers
 
                 using (var client = new HttpClient())
                 {
-                    HttpResponseMessage response = await client.GetAsync(WebApiService.Instance.BuildActionUri(providerUserWants.Url));
+                    await client.GetAsync(WebApiService.Instance.BuildActionUri(providerUserWants.Url));
+                    //HttpResponseMessage response = await client.GetAsync(WebApiService.Instance.BuildActionUri(providerUserWants.Url));
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var answer = response.Headers.ToString();
+                    //if (response.IsSuccessStatusCode)
+                    //{
+                    //    var answer = response.Headers.ToString();
 
-                        // Request a redirect to the external login provider
-                        return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
-                    }
+                    //    #region ORIGINAL ChallengeResult
+                    //    //// Request a redirect to the external login provider
+                    //    //return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+                    //    #endregion
+                    //    //var testUrl = Url.RouteUrl("DefaultApi", new { httproute = "", controller = "Account", action = "ExternalLogin"});
+                    //    var testUrl = Url.Action("ExternalLogin", "Account", new { ReturnUrl = returnUrl });
+                    //    testUrl = Url.Action("ExternalLogin", "api/Account");
+                    //    // Request a redirect to the external login provider
+                    //    return new ChallengeResult(provider, Url.Action("ExternalLogin", "api/Account", new { ReturnUrl = returnUrl }));
+                    //}
                 }
             }
-            return RedirectToAction("Sigin");
+            //return RedirectToAction("Sigin");
         }
 
         #region ORIGINAL ExternalLogin

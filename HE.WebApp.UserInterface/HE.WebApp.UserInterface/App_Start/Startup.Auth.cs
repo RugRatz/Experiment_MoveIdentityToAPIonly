@@ -7,6 +7,7 @@ using Owin;
 using HE.API.DbContexts;
 using HE.API.Models;
 using Microsoft.Owin.Security.Google;
+using Microsoft.Owin.Diagnostics;
 
 namespace HE.WebApp.UserInterface
 {
@@ -14,7 +15,18 @@ namespace HE.WebApp.UserInterface
     {
         // For more information on configuring authentication, please visit http://go.microsoft.com/fwlink/?LinkId=301864
         public void ConfigureAuth(IAppBuilder app)
-        { 
+        {
+            app.UseErrorPage(new ErrorPageOptions()
+            {
+                ShowCookies = true,
+                ShowEnvironment = true,
+                ShowQuery = true,
+                ShowExceptionDetails = true,
+                ShowHeaders = true,
+                ShowSourceCode = true,
+                SourceCodeLineCount = 10
+            });
+
             // Configure the db context, user manager and signin manager to use a single instance per request
             app.CreatePerOwinContext(HE_IdentityDbContext.Create);
             app.CreatePerOwinContext<ApplicationUserManager>(ApplicationUserManager.Create);
@@ -59,10 +71,11 @@ namespace HE.WebApp.UserInterface
             {
                 await next.Invoke();
             });
+            
 
-            app.UseFacebookAuthentication(
-               appId: "1676987429221183",
-               appSecret: "833a4ccda4872c8d8ebf45b14297e0a1");
+            //app.UseFacebookAuthentication(
+            //   appId: "1676987429221183",
+            //   appSecret: "833a4ccda4872c8d8ebf45b14297e0a1");
             
             app.Use(async (Context, next) =>
             {

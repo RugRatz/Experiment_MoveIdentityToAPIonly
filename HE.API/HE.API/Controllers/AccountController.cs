@@ -237,7 +237,7 @@ namespace HE.API.Controllers
             if (!User.Identity.IsAuthenticated)
             {
                 //return new ChallengeResult(provider, this);
-                return new ChallengeResult(provider, "/api/home", this);
+                return new ChallengeResult(provider, "/api/new", this);
             }
 
             ExternalLoginData externalLogin = ExternalLoginData.FromIdentity(User.Identity as ClaimsIdentity);
