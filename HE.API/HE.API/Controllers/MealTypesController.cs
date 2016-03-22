@@ -7,6 +7,7 @@ using System.Web.Http;
 using System.Web.Http.Description;
 using HE.Domain;
 using HE.API.DbContexts;
+using System.Collections.Generic;
 
 namespace HE.API.Controllers
 {

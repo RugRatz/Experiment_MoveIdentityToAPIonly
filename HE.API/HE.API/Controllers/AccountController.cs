@@ -341,7 +341,7 @@ namespace HE.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var user = new CustomerProfile() { UserName = model.EmailAddress, Email = model.EmailAddress };
+            var user = new CustomerProfile() { UserName = model.Email, Email = model.Email };
 
             IdentityResult result = await UserManager.CreateAsync(user, model.Password);
 

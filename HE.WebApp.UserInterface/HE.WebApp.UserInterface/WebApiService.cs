@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Ajax.Utilities;
 using Newtonsoft.Json;
 using System;
+using HE.API.Models;
 
 namespace HE.WebApp.UserInterface
 {
@@ -46,7 +47,7 @@ namespace HE.WebApp.UserInterface
             }
         }
 
-        public async Task<T> GetAsync<T>(string action, string authToken = null)
+        public async Task<List<MealTypesModel>> GetAsync(string action, string authToken = null)
         {
             using (var client = new HttpClient())
             {
@@ -61,10 +62,12 @@ namespace HE.WebApp.UserInterface
                 string json = await result.Content.ReadAsStringAsync();
                 if (result.IsSuccessStatusCode)
                 {
-                    return JsonConvert.DeserializeObject<T>(json);
+                    //var test = JsonConvert.DeserializeObject<List<MealTypesModel>>(json);
+                    //var a = test;
+                    return JsonConvert.DeserializeObject<List<MealTypesModel>>(json);
                 }
 
-                throw new Exception(result.StatusCode + " " + JsonConvert.DeserializeObject<T>(json));
+                throw new Exception(result.StatusCode + " " + JsonConvert.DeserializeObject<List<MealTypesModel>>(json));
             }
         }
 
@@ -89,7 +92,7 @@ namespace HE.WebApp.UserInterface
         //    }
         //}
 
-        public async Task PostAsync<T>(string action, T data, string authToken = null)
+        public async Task<HttpResponseMessage> PostAsync<T>(string action, T data, string authToken = null)
         {
             using (var client = new HttpClient())
             {
@@ -99,15 +102,20 @@ namespace HE.WebApp.UserInterface
                     client.DefaultRequestHeaders.Authorization = AuthenticationHeaderValue.Parse("Bearer " + authToken);
                 }
 
-                var result = await client.PostAsJsonAsync(BuildActionUri(action), data);
+                # region Instead of doing all of this, I prefer to return the result of the task then allow each action to process what it needs to
+                // 
+                //var result = await client.PostAsJsonAsync(BuildActionUri(action), data);
 
-                string json = await result.Content.ReadAsStringAsync();
+                //string json = await result.Content.ReadAsStringAsync();
 
-                if (result.IsSuccessStatusCode)
-                {
-                    return; //JsonConvert.DeserializeObject<T>(json);
-                }
-                throw new Exception(result.StatusCode + " " + json);
+                //if (result.IsSuccessStatusCode)
+                //{
+                //    return; //JsonConvert.DeserializeObject<T>(json);
+                //}
+                ////throw new Exception(result.StatusCode + " " + json);
+                //return; //JsonConvert.DeserializeObject<T>(json);
+                #endregion
+                return await client.PostAsJsonAsync(BuildActionUri(action), data);
             }
         }
 

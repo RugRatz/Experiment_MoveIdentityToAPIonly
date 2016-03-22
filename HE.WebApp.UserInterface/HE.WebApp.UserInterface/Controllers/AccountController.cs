@@ -9,6 +9,7 @@ using Microsoft.Owin.Security;
 using HE.WebApp.UserInterface.Models;
 using HE.API.Models;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace HE.WebApp.UserInterface.Controllers
 {
@@ -78,17 +79,20 @@ namespace HE.WebApp.UserInterface.Controllers
             var claims = new List<Claim>();
             claims.Add(new Claim(ClaimTypes.Name, model.EmailAddress));
             claims.Add(new Claim(ClaimTypes.Email, model.EmailAddress));
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, model.EmailAddress));
             var userIdentity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
             
             var isSignInSuccessful = await AttemptSignIn(userIdentity, model.EmailAddress, model.Password);
 
             // Redirect is needed to set the User object. User object is only set on the subsequent request.
             if (isSignInSuccessful)
-                return RedirectToLocal(returnUrl);
+            {
+                //return RedirectToLocal(returnUrl);
+                return RedirectToAction("MealTypesWelcomeScreen", "MealTypesUI");
+            }
 
             ModelState.AddModelError("", "Invalid login attempt.");
             return View(model);
-
             #region Unable to use SignInManager due to UserId issue.  ASP pipeline doesn't set the User until the next request! That is why you see at the end a Redirect... which will send in the next request and set the User.
             // I was not able to use the SignInManager because it is unable to locate the logged in user's UserId
             //var result = await SignInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, shouldLockout: false);
@@ -232,32 +236,61 @@ namespace HE.WebApp.UserInterface.Controllers
                 //var result = await UserManager.CreateAsync(user, model.Password);
 
                 // route the Register job to the WebApi
-                await WebApiService.Instance.PostAsync("/api/Account/Register", model);
+                var result = await WebApiService.Instance.PostAsync("/api/Account/Register", model);
+                var json = await result.Content.ReadAsStringAsync();
+                var anonymousErrorObject =
+                        new { message = "", ModelState = new Dictionary<string, string[]>() };
 
-                //manually add a claim for the user's identity
-                var claims = new List<Claim>();
-                claims.Add(new Claim(ClaimTypes.Name, model.EmailAddress));
-                claims.Add(new Claim(ClaimTypes.Email, model.EmailAddress));
-                var userIdentity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
+                // Converts the JSON result to an IdentityResult object
+                var deserializedErrorObject = JsonConvert.DeserializeAnonymousType(json, anonymousErrorObject);
 
-                var isSignInSuccessful = await AttemptSignIn(userIdentity, model.EmailAddress, model.Password);
 
-                // Redirect is needed to set the User object. User object is only set on the subsequent request.
-                if (isSignInSuccessful)
+                if (result.IsSuccessStatusCode)
                 {
-                    // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
-                    // Send an email with this link
-                    // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
-                    // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
-                    // await UserManager.SendEmailAsync(user.Id, "Confirm your account", "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>");
+                    // manually add a claim for the user's identity
+                    // Claims are items stored in the cookie and @Html.AntiForgeryToken() looks for a NameIdentifier in the cookie 
+                    // - this is set on Global.asax.cs AntiForgeryConfig.UniqueClaimTypeIdentifier = ClaimTypes.NameIdentifier;
+                    // On _LoginPartial.cshtml, the User.Identity.GetUserName() looks inside the cookie for the claim type titled "Name" - this is set in code by claims.Add(new Claim(ClaimTypes.Name, model.EmailAddress));
+                    var claims = new List<Claim>();
+                    claims.Add(new Claim(ClaimTypes.Name, model.Email));
+                    claims.Add(new Claim(ClaimTypes.Email, model.Email));
 
-                    return RedirectToAction("Signin", "Account");
+                    // Needed to add this because I set the app to look for this particular item in the cookie to identify the user
+                    claims.Add(new Claim(ClaimTypes.NameIdentifier, model.Email));
+                    var userIdentity = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
+
+                    var isSignInSuccessful = await AttemptSignIn(userIdentity, model.Email, model.Password);
+
+                    // Redirect is needed to set the User object. User object is only set on the subsequent request.
+                    if (isSignInSuccessful)
+                    {
+                        // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
+                        // Send an email with this link
+                        // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
+                        // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                        // await UserManager.SendEmailAsync(user.Id, "Confirm your account", "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>");
+
+                        //return RedirectToAction("Signin", "Account");
+                        return RedirectToAction("MealTypesWelcomeScreen", "MealTypesUI");
+                    }
+                }
+
+                // Errors on the API side are handled SEPARATELY and DIFFERENTLY
+                // You will need to add errors to your modelstate manually
+                // Check if there are actually model errors
+                if (deserializedErrorObject.ModelState != null)
+                {
+                    var errors =
+                        deserializedErrorObject.ModelState
+                                                .Select(kvp => string.Join(". ", kvp.Value));
+
+                    foreach(var error in errors)
+                    {
+                        ModelState.AddModelError("", error);
+                    }
                 }
             }
-
-            // I'm pretty sure errors are now logged on the HE.API side
-            //AddErrors(result);
-
+            
             // If we got this far, something failed, redisplay form
             return View(model);
         }
