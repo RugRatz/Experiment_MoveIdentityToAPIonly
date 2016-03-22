@@ -12,6 +12,14 @@ body {
     padding: 0;
 }
 
+.bodyHE {
+    background: url(Images/watermarked.jpg) no-repeat center center fixed;
+    background-size: cover; /* causes image to be full size of the screen */
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 /*html, body {
     background: url(images/roots.jpg) no-repeat center center fixed;
     background-size: cover; /* causes image to be full size of the screen */
@@ -53,4 +61,24 @@ textarea {
 
 a {
   color: black;
+}
+
+.thumbnailsBreakfastImg {
+    /*position: absolute;*/
+    /*top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;*/
+    background-image: url(Images/omlete.jpg);
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.thumbnailWrapper {
+    width:250px;
+    height:350px;
+    /*border:2px black solid;
+    margin:auto;*/
+    /*position: relative;*/
+    overflow: auto;
 }

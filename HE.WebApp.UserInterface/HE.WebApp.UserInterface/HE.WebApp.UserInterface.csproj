@@ -206,9 +206,21 @@
     <Content Include="Content\Images\BiblicalWoman_Editted.jpg" />
     <Content Include="Content\Images\cheese.jpg" />
     <Content Include="Content\Images\cheeseBoard.jpg" />
+    <Content Include="Content\Images\dinner.jpg" />
+    <Content Include="Content\Images\dinnerFajita.jpg" />
+    <Content Include="Content\Images\dinnerSalmon.jpg" />
+    <Content Include="Content\Images\dinnerShrimp.jpg" />
+    <Content Include="Content\Images\dinnerShrimpBowl.jpg" />
+    <Content Include="Content\Images\dinnerYum.jpg" />
     <Content Include="Content\Images\fruitArrangement.jpg" />
     <Content Include="Content\Images\knifeWithGarlic.jpg" />
+    <Content Include="Content\Images\lunch.jpg" />
+    <Content Include="Content\Images\lunch2.jpg" />
+    <Content Include="Content\Images\lunchPasta.jpg" />
+    <Content Include="Content\Images\omlete.jpg" />
+    <Content Include="Content\Images\omleteOnPan.jpg" />
     <Content Include="Content\Images\roots.jpg" />
+    <Content Include="Content\Images\SalmonPotatoOmelette.jpg" />
     <Content Include="Content\Images\veges.jpg" />
     <Content Include="Content\Images\watermarked.jpg" />
     <Content Include="favicon.ico" />
@@ -266,7 +278,8 @@
     <Content Include="Views\Manage\VerifyPhoneNumber.cshtml" />
     <Content Include="Views\Shared\Lockout.cshtml" />
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
-    <Content Include="Views\MealTypesUI\MealTypesWelcomeScreen.cshtml" />
+    <Content Include="Views\MealTypesUI\Welcome.cshtml" />
+    <Content Include="Views\Shared\_HomemadeEatsLayout.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

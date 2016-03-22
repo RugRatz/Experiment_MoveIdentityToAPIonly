@@ -88,7 +88,7 @@ namespace HE.WebApp.UserInterface.Controllers
             if (isSignInSuccessful)
             {
                 //return RedirectToLocal(returnUrl);
-                return RedirectToAction("MealTypesWelcomeScreen", "MealTypesUI");
+                return RedirectToAction("Welcome", "MealTypesUI");
             }
 
             ModelState.AddModelError("", "Invalid login attempt.");
@@ -271,7 +271,7 @@ namespace HE.WebApp.UserInterface.Controllers
                         // await UserManager.SendEmailAsync(user.Id, "Confirm your account", "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>");
 
                         //return RedirectToAction("Signin", "Account");
-                        return RedirectToAction("MealTypesWelcomeScreen", "MealTypesUI");
+                        return RedirectToAction("Welcome", "MealTypesUI");
                     }
                 }
 

@@ -1,0 +1,39 @@
+﻿@model HE.WebApp.UserInterface.Models.MealTypesViewModel
+@{
+    ViewBag.Title = "Welcome";
+    Layout = "~/Views/Shared/_HomemadeEatsLayout.cshtml";
+}
+
+<h2>Welcome</h2>
+
+<!-- Container (The Band Section) -->
+<div id="welcomeScreen" class="container text-center">
+    <h3>HOMEMADE EATS [LOGO]</h3>
+    <h1><p><em class="text-blackbold">We love homemade food!</em></p></h1>
+    <br>
+    <div class="row">
+        <div class="col-sm-4 ">
+            <a href="#demo" data-toggle="collapse" class="thumbnail">
+                <!-- In order to make images of all sizes fit into the thumbnail, you need to first used class="thumbnail"
+                    in the <a> tag and then use the style="height:255px" (you can add the width in there if you need width) -->
+                <img src="~/Content/Images/omlete.jpg" class="img-responsive" alt="Breakfast" style="height:255px">
+            </a>
+            <!-- Use the below if you wanted to add a collapseable item for the thumbnail. Don't need it right now -->
+            @*<div id="demo" class="collapse">
+            <p>Blah Blah Blah</p>
+            <p>Blah Blah Blah</p>
+            <p>Member since 1988</p>
+        </div>*@
+        </div>
+        <div class="col-sm-4 ">
+            <a href="#demo2" data-toggle="collapse" class="thumbnail">
+                <img src="~/Content/Images/lunch2.jpg" class="img-responsive" alt="Lunch" style="height:255px">
+            </a>
+        </div>  
+        <div class="col-sm-4 ">
+            <a href="#demo3" data-toggle="collapse" class="thumbnail">
+                <img src="~/Content/Images/dinnerFajita.jpg" class="img-responsive" alt="Dinner" style="height:255px">
+            </a>
+        </div>
+    </div>
+</div>

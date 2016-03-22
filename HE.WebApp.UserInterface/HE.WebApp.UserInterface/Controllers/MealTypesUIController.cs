@@ -9,17 +9,17 @@ using System.Web;
 using System.Web.Mvc;
 using HE.API.DbContexts;
 using HE.API.Models;
+using HE.WebApp.UserInterface.Models;
 
 namespace HE.WebApp.UserInterface.Controllers
 {
     public class MealTypesUIController : Controller
     {
         // GET: MealTypesModels
-        public async Task<ActionResult> MealTypesWelcomeScreen()
+        public async Task<ActionResult> Welcome()
         {
-            //await db.MealTypesModels.ToListAsync()
-            var test = await WebApiService.Instance.GetAsync("api/MealTypes");
-            return View("MealTypesWelcomeScreen");
+            var mealTypesList = await WebApiService.Instance.GetAsync("api/MealTypes");
+            return View("Welcome");
         }
 
         #region GET: MealTypesModels/Details/5
